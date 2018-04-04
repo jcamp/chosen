@@ -86,11 +86,16 @@ class @Chosen extends AbstractChosen
       @container.observe "click", (evt) => evt.preventDefault() # gobble click of anchor
 
       @focus_field.observe "blur", (evt) => this.input_blur(evt)
-      @focus_field.observe "keyup", (evt) => this.keyup_checker(evt)
-      @focus_field.observe "keydown", (evt) => this.keydown_checker(evt)
       @focus_field.observe "focus", (evt) => this.input_focus(evt)
-      @focus_field.observe "cut", (evt) => this.clipboard_event_checker(evt)
-      @focus_field.observe "paste", (evt) => this.clipboard_event_checker(evt)
+
+      transfer_value = () =>
+        @search_field.value = @search_field.value + @focus_field.value
+        @focus_field.value = ""
+
+      @focus_field.observe "keyup", (evt) => transfer_value(); this.keyup_checker(evt)
+      @focus_field.observe "keydown", (evt) => transfer_value(); this.keydown_checker(evt)
+      @focus_field.observe "cut", (evt) => setTimeout(transfer_value, 0); this.clipboard_event_checker(evt)
+      @focus_field.observe "paste", (evt) => setTimeout(transfer_value, 0); this.clipboard_event_checker(evt)
 
   destroy: ->
     @container.ownerDocument.stopObserving "click", @click_test_action
@@ -249,7 +254,6 @@ class @Chosen extends AbstractChosen
 
     @search_field.focus()
     @search_field.value = this.get_search_field_value()
-    @focus_field?.value = ""
 
     this.winnow_results()
     @form_field.fire("chosen:showing_dropdown", {chosen: this})
@@ -372,7 +376,6 @@ class @Chosen extends AbstractChosen
       @form_field.options[item.options_index].selected = true
       @selected_option_count = null
       @search_field.value = ""
-      @focus_field?.value = ""
 
       if @is_multiple
         this.choice_build item
@@ -425,7 +428,7 @@ class @Chosen extends AbstractChosen
     @selected_item.addClassName("chosen-single-with-deselect")
 
   get_search_field_value: ->
-    @search_field.value + (@focus_field?.value || "")
+    @search_field.value
 
   get_search_text: ->
     this.get_search_field_value().strip()

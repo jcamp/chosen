@@ -107,11 +107,16 @@ class Chosen extends AbstractChosen
       @container.on 'click.chosen', (evt) -> evt.preventDefault(); return # gobble click of anchor
 
       @focus_field.on 'blur.chosen', (evt) => this.input_blur(evt); return
-      @focus_field.on 'keyup.chosen', (evt) => this.keyup_checker(evt); return
-      @focus_field.on 'keydown.chosen', (evt) => this.keydown_checker(evt); return
       @focus_field.on 'focus.chosen', (evt) => this.input_focus(evt); return
-      @focus_field.on 'cut.chosen', (evt) => this.clipboard_event_checker(evt); return
-      @focus_field.on 'paste.chosen', (evt) => this.clipboard_event_checker(evt); return
+
+      transfer_value = () =>
+        @search_field.val(@search_field.val() + @focus_field.val())
+        @focus_field.val('')
+
+      @focus_field.on 'keyup.chosen', (evt) => transfer_value(); this.keyup_checker(evt); return
+      @focus_field.on 'keydown.chosen', (evt) => transfer_value(); this.keydown_checker(evt); return
+      @focus_field.on 'cut.chosen', (evt) => setTimeout(transfer_value, 0); this.clipboard_event_checker(evt); return
+      @focus_field.on 'paste.chosen', (evt) => setTimeout(transfer_value, 0); this.clipboard_event_checker(evt); return
 
   destroy: ->
     $(@container[0].ownerDocument).off 'click.chosen', @click_test_action
@@ -256,7 +261,6 @@ class Chosen extends AbstractChosen
 
     @search_field.focus()
     @search_field.val this.get_search_field_value()
-    @focus_field.val ""
 
     this.winnow_results()
     @form_field_jq.trigger("chosen:showing_dropdown", {chosen: this})
@@ -379,7 +383,6 @@ class Chosen extends AbstractChosen
       @form_field.options[item.options_index].selected = true
       @selected_option_count = null
       @search_field.val("")
-      @focus_field.val("")
 
       if @is_multiple
         this.choice_build item
@@ -433,7 +436,7 @@ class Chosen extends AbstractChosen
     @selected_item.addClass("chosen-single-with-deselect")
 
   get_search_field_value: ->
-    @search_field.val() + (@focus_field.val() || "")
+    @search_field.val()
 
   get_search_text: ->
     $.trim this.get_search_field_value()
